@@ -1,0 +1,53 @@
+service: fitsense 
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: ap-southeast-2
+  iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - "dynamodb:PutItem"
+              - "dynamodb:GetItem"
+              - "dynamodb:UpdateItem"
+              - "dynamodb:DeleteItem"
+              - "dynamodb:BatchGetItem"
+              - "dynamodb:BatchWriteItem"
+              - "dynamodb:Scan"
+              - "dynamodb:Query"
+          Resource:
+              - "arn:aws:dynamodb:ap-southeast-2:*:*"
+        - Effect: Allow
+          Action:
+              - "execute-api:ManageConnections"
+          Resource:
+              - "arn:aws:execute-api:*:*:**/@connections/*"
+  websocketApiName: fitsense-chat-api
+  websocketApiRouteSelectionExpression: $request.body.action
+
+functions:
+  connectionHandler:
+        handler: handler.connection_handler
+        events:
+            - websocket:
+                route: $connect
+            - websocket:
+                route: $disconnect
+  defaultMessage:
+        handler: handler.default_message
+        events:
+            - websocket:
+                route: $default
+  sendMessage:
+        handler: handler.send_message
+        events:
+            - websocket:
+                route: sendMessage
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+      dockerizePip: true
+      noDeploy: []
